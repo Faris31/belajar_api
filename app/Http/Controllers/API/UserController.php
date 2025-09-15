@@ -4,9 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use App\Http\Controllers\Controller;
 use Psy\CodeCleaner\ReturnTypePass;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -15,11 +16,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::get();
+        $users = User::get(); // select * from user
         return response()->json([
             'data'=>$users,
-            'status'=>true,
-            'message'=>'Fetch data success'
+            'message' => 'Fetch data success',
+            'status' => true,
         ]);
     }
 
@@ -71,7 +72,20 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+            $user = User::findOrFail($id);
+            // $user = User::where('id', $id)->first();
+            return response()->json([
+                'status' => true,
+                'message' => 'Edit data user success',
+                'data' => $user,
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -87,7 +101,28 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try {
+            // $user = User::get();
+            $user = User::findOrFail($id); // jika eror mucul page 404
+            // $user = User::find();
+            $user->name = $request->name;
+            if ($request->filled('password')) {
+                $user->password = Hash::make($request->password);
+            }
+            $user->email = $request->email;
+            // $user->password = $request->password;
+            $user->save();
+            return response()->json([
+                'status' => true,
+                'message' => 'Update user fetch',
+                'data' => $user
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -95,6 +130,17 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            User::find($id)->delete();
+            return response()->json([
+                'status' => true,
+                'message' => 'Delete success'
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
     }
 }
